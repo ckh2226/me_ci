@@ -6,18 +6,23 @@ n <- 1000
 # 0) Be reproducible queens
 set.seed(205)
 
-# 1) Rural/not rural indicator 
-Z = rbinom(n = n, size = 1, prob = 0.2)
-
-# 2) True proximity | Rural / not rural 
-X = rnorm(n = n, mean = 1 + 4 * Z, sd = 1)
-
-# 3) Dietary inflammation score | True proximity, rural / not rural 
 beta0 = 6
 beta1 = - 2
 beta2 = 1
-eps = rnorm(n = n, mean = 0, sd = 1)
-Y = beta0 + beta1 * X + beta2 * Z + eps
+sim_ef_data = function() {
+  # 1) Rural/not rural indicator 
+  Z = rbinom(n = n, size = 1, prob = 0.2)
+  
+  # 2) True proximity | Rural / not rural 
+  X = rnorm(n = n, mean = 1 + 4 * Z, sd = 1)
+  
+  # 3) Dietary inflammation score | True proximity, rural / not rural 
+  eps = rnorm(n = n, mean = 0, sd = 1)
+  Y = beta0 + beta1 * X + beta2 * Z + eps
+  
+  # 4) Return 
+  data.frame(Y, X, Z)
+}
 # ALT: Y = rnorm(n = n, mean = beta0 + beta1 * X + beta2 * Z, sd = 1)
 
 # 4a) Error-prone proximity | True proximity 
@@ -43,14 +48,18 @@ results <- data.frame(a = rep(NA, n),
                       c = rep(NA, n), 
                       truth = rep(NA, n))
 
+# For reference: The attenuation factor is defined 
+lambda <- 1 / (1 + sigmaU ^ 2)
+
 # 5a) Simulation using Error-prone proximity | True proximity 
+sigmaU = 0.25 ## Low (0.1 - 0.25), Moderate (0.5), High (1)
 for(i in 1:n) {
-  sigmaU = 0.25 ## Low (0.1 - 0.25), Moderate (0.5), High (1)
+  temp = sim_ef_data()
   U = rnorm(n = n, mean = 0, sd = sigmaU)
-  Xstar = X + U
+  temp$Xstar = temp$X + U
   
-  results[i, "a"] <- ci(Xstar,
-                        Y,
+  results[i, "a"] <- ci(temp$Xstar,
+                        temp$Y,
                         type = "CI",
                         method = "linreg_delta", # Check method
                         df_correction = TRUE
