@@ -1,7 +1,7 @@
 library(rineq)
 
 # Set constants 
-n <- 1000
+# n <- 1000
 
 # 0) Be reproducible queens
 set.seed(205)
@@ -9,26 +9,63 @@ set.seed(205)
 beta0 = 6
 beta1 = - 2
 beta2 = 1
-sim_ef_data = function() {
+sim_ef_data = function(sigmaU, n) {
   # 1) Rural/not rural indicator 
   Z = rbinom(n = n, size = 1, prob = 0.2)
   
   # 2) True proximity | Rural / not rural 
   X = rnorm(n = n, mean = 1 + 4 * Z, sd = 1)
   
+  # Calculate rank
+  R <- (rank(X) - 1)/n + 1/(2 * n)
+  
   # 3) Dietary inflammation score | True proximity, rural / not rural 
   eps = rnorm(n = n, mean = 0, sd = 1)
-  Y = beta0 + beta1 * X + beta2 * Z + eps
+  Y = beta0 + beta1 * R + eps
+  
+  # Generate errors and error-prone X
+  U = rnorm(n = n, mean = 0, sd = sigmaU)
+  Xstar = X + U
+  
+  # Calculate error-prone rank
+  Rstar <- (rank(Xstar) - 1)/n + 1/(2 * n)
   
   # 4) Return 
-  data.frame(Y, X, Z)
+  data.frame(Y, X, R, Z, U, Xstar, Rstar)
 }
+
+
+
+simulate_rep = function(sigmaU, n) {
+  
+  temp <- sim_ef_data(sigmaU, n) # First step of replication
+  
+  # Calculating CIs steps 2a and 2b
+  ci_xstar <- ci(temp$Xstar,
+     temp$Y,
+     type = "CI",
+     method = "linreg_delta", # Check method
+     df_correction = TRUE
+  )
+  
+  ci_x <- ci(temp$X,
+     temp$Y,
+     type = "CI",
+     method = "linreg_delta", # Check method
+     df_correction = TRUE
+  )
+  
+  data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, n)
+}
+
+do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
+
+
 # ALT: Y = rnorm(n = n, mean = beta0 + beta1 * X + beta2 * Z, sd = 1)
 
 # 4a) Error-prone proximity | True proximity 
-sigmaU = 0.25 ## Low (0.1 - 0.25), Moderate (0.5), High (1)
-U = rnorm(n = n, mean = 0, sd = sigmaU)
-Xstar = X + U
+# sigmaU = 0.25 ## Low (0.1 - 0.25), Moderate (0.5), High (1)
+
 
 # 4b) Error-prone proximity | True proximity, rural / not rural 
 U = rnorm(n = n, mean = 0, sd = Z * (sigmaU + 0.25) + (1 - Z) * sigmaU)
