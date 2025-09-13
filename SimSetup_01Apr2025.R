@@ -59,6 +59,10 @@ simulate_rep = function(sigmaU, n) {
   data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, n)
 }
 
+# Testing functions, running multiple simulations
+do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
+do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
+
 ########
 # Testing different values for sigmaU
 ## Choose a range of variances 
@@ -85,9 +89,6 @@ ggplot(ci_df_long, aes(x = sigmaU, y = ci, color = variable)) + geom_point() +
   theme_bw()
 ########
 
-
-do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
-do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
 
 
 # ALT: Y = rnorm(n = n, mean = beta0 + beta1 * X + beta2 * Z, sd = 1)
