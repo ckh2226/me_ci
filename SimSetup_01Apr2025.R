@@ -1,4 +1,5 @@
 library(rineq)
+library(tidyverse)
 
 # Set constants 
 # n <- 1000
@@ -58,6 +59,34 @@ simulate_rep = function(sigmaU, n) {
   data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, n)
 }
 
+########
+# Testing different values for sigmaU
+## Choose a range of variances 
+try_sigmas <- seq(from = 0, to = 10, by = 0.15)
+n <- length(try_sigmas)
+
+## Create a data frame to store simulation results (average concentration indices and variance used)
+ci_df <- data.frame(sigmaU = try_sigmas, avg_ci_x = rep(NA, n), avg_ci_xstar = rep(NA, n))
+
+for(i in 1:n) {
+  sim <- do.call(rbind, replicate(10000, simulate_rep(try_sigmas[i], 1000), simplify = FALSE))
+  ci_df[i, 'avg_ci_x'] <- mean(sim$ci_x)
+  ci_df[i, 'avg_ci_xstar'] <- mean(sim$ci_xstar)
+}
+########
+
+# Plot some simulation results
+## Pivot data frame
+ci_df_long <- ci_df |>
+  pivot_longer(cols = c('avg_ci_x', 'avg_ci_xstar'), names_to = 'variable', values_to = 'ci')
+
+ggplot(ci_df_long, aes(x = sigmaU, y = ci, color = variable)) + geom_point() +
+  labs(title = "Simulated Concentration Indices", x = 'Variance of Error', y = 'Concentration Index') +
+  theme_bw()
+########
+
+
+do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
 do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
 
 
