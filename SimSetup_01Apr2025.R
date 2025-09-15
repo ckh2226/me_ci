@@ -60,8 +60,12 @@ simulate_rep = function(sigmaU, n) {
 }
 
 # Testing functions, running multiple simulations
-do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
-do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
+df1 <- do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
+df2 <- do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
+df3 <- do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
+
+ggplot(data = df3, aes(x = ci_x)) + geom_histogram() + theme_bw()
+ggplot(data = df3, aes(x = ci_xstar)) + geom_histogram() + theme_bw()
 
 ########
 # Testing different values for sigmaU
