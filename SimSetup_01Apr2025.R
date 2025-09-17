@@ -62,10 +62,24 @@ simulate_rep = function(sigmaU, n) {
 # Testing functions, running multiple simulations
 df1 <- do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
 df2 <- do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
-df3 <- do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
+df3 <- do.call(rbind, replicate(10000, simulate_rep(3, 1000), simplify = FALSE))
 
-ggplot(data = df3, aes(x = ci_x)) + geom_histogram() + theme_bw()
-ggplot(data = df3, aes(x = ci_xstar)) + geom_histogram() + theme_bw()
+g1 <- ggplot(data = df1, aes(x = ci_x)) + geom_histogram() + theme_bw() +
+  labs(title = "sigmaU= 0.1")
+g2 <- ggplot(data = df1, aes(x = ci_xstar)) + geom_histogram() + theme_bw() + 
+  labs(title = "sigmaU= 0.1")
+
+g3 <- ggplot(data = df2, aes(x = ci_x)) + geom_histogram() + theme_bw() + 
+  labs(title = "sigmaU= 0.25")
+g4 <- ggplot(data = df2, aes(x = ci_xstar)) + geom_histogram() + theme_bw() +
+  labs(title = "sigmaU= 0.25")
+
+g5 <- ggplot(data = df3, aes(x = ci_x)) + geom_histogram() + 
+  theme_bw() + labs(title = "sigmaU= 3")
+g6 <- ggplot(data = df3, aes(x = ci_xstar)) + geom_histogram() + theme_bw() + 
+  labs(title = "sigmaU= 3")
+
+gridExtra::grid.arrange(g1, g2, g3, g4, g5, g6, ncol = 2)
 
 ########
 # Testing different values for sigmaU
