@@ -8,8 +8,8 @@ library(tidyverse)
 set.seed(205)
 
 beta0 = 6
-beta1 = - 2
-beta2 = 1
+beta1 = -2
+# beta2 = 1
 sim_ef_data = function(sigmaU, n) {
   # 1) Rural/not rural indicator 
   Z = rbinom(n = n, size = 1, prob = 0.2)
@@ -103,7 +103,7 @@ ci_df_long <- ci_df |>
   pivot_longer(cols = c('avg_ci_x', 'avg_ci_xstar'), names_to = 'variable', values_to = 'ci')
 
 ggplot(ci_df_long, aes(x = sigmaU, y = ci, color = variable)) + geom_point() +
-  labs(title = "Simulated Concentration Indices", x = 'Variance of Error', y = 'Concentration Index') +
+  labs(title = "Simulated Concentration Indices", x = "Variance of Error Term", y = "Concentration Index") +
   theme_bw()
 ########
 
