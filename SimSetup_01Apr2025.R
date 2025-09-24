@@ -30,9 +30,10 @@ sim_ef_data = function(sigmaU, n) {
   
   # Calculate error-prone rank
   Rstar <- (rank(Xstar) - 1)/n + 1/(2 * n)
+  w <- Rstar - R
   
   # 4) Return 
-  data.frame(Y, X, R, Z, U, Xstar, Rstar)
+  data.frame(Y, X, R, Z, U, Xstar, Rstar, w, R, Y_bar = mean(Y))
 }
 
 
@@ -56,11 +57,21 @@ simulate_rep = function(sigmaU, n) {
      df_correction = TRUE
   )
   
-  data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, n)
+  var_w <- var(temp$w)
+  var_R <- var(temp$R)
+  
+  data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, var_w, var_R, n)
 }
 
 # Testing functions, running multiple simulations
-df1 <- do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE))
+df1 <- do.call(rbind, replicate(10000, simulate_rep(0.1, 1000), simplify = FALSE)) 
+
+df1 <- df1 |>
+  mutate(lambda = var_R/(var_R + var_w))
+
+ggplot()
+
+
 df2 <- do.call(rbind, replicate(10000, simulate_rep(0.25, 1000), simplify = FALSE))
 df3 <- do.call(rbind, replicate(10000, simulate_rep(3, 1000), simplify = FALSE))
 
