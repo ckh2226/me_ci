@@ -45,9 +45,10 @@ data <- sim_ef_data(0.5, 10000, -0.5, 3)
 mu_hat <- data$Y_bar[1]
 var_r <- var(data$R)
 fit1 <- lm(Y ~ R, data = data)
-beta1_hat <- fit1$coefficients[2]
+fit2 <- lm(Y ~ Rstar, data = data)
+beta1_hat <- fit1$coefficients[2] 
 
-our_ci <- 2 * var_r/mu_hat * beta1_hat
+our_ci <- 2 * var_r/mu_hat * beta1_hat # Try computing CI this way instead of using rineq
 
 their_ci <- ci(data$X,
            data$Y,
@@ -55,32 +56,47 @@ their_ci <- ci(data$X,
            method = "linreg_delta", # Check method
            df_correction = TRUE)
 
+data$Y_bar
+
+
 
 # Function to compute concentration induces from above simulations
 simulate_rep = function(sigmaU, n, alpha1, beta1) {
   
   temp <- sim_ef_data(sigmaU, n, alpha1, beta1) # First step of replication
   
-  # Calculating CIs steps 2a and 2b
-  ci_xstar <- ci(temp$Xstar,
-                 temp$Y,
-                 type = "CI",
-                 method = "linreg_delta", # Check method
-                 df_correction = TRUE
-  )
+  mu_hat <- temp$Y_bar[1]
+  var_r <- var(temp$R)
+  fit1 <- lm(Y ~ R, data = temp)
+  fit2 <- lm(Y ~ Rstar, data = temp)
+  beta1_hat <- fit1$coefficients[2] 
+  beta1star_hat <- fit2$coefficients[2] 
   
-  ci_x <- ci(temp$X,
-             temp$Y,
-             type = "CI",
-             method = "linreg_delta", # Check method
-             df_correction = TRUE
-  )
+  ci_x <- 2 * var_r/mu_hat * beta1_hat
+  ci_xstar <- 2 * var_r/mu_hat * beta1star_hat
+  
+  # Calculating CIs steps 2a and 2b
+  # ci_xstar <- ci(temp$Xstar,
+  #                temp$Y,
+  #                type = "CI",
+  #                method = "cov_convenience", # Check method
+  #                df_correction = TRUE
+  # )
+  # 
+  # ci_x <- ci(temp$X,
+  #            temp$Y,
+  #            type = "CI",
+  #            method = "cov_convenience", # Check method
+  #            df_correction = TRUE
+  # )
   
   var_w <- var(temp$w)
   var_R <- var(temp$R)
   lambda <- var_R/(var_R + var_w)
   
-  data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, var_w, var_R, lambda, n)
+  # data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, var_w, var_R, lambda, n)
+  data.frame(ci_xstar = ci_xstar, ci_x, sigmaU, var_w, var_R, lambda, n)
+
 }
 
 # Run multiple simulations at different levels of alpha1 and beta1
