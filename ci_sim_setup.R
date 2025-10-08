@@ -1,3 +1,6 @@
+## Load packages 
+library(rineq)
+
 ## Set sample size 
 N = 100 
 
@@ -99,7 +102,7 @@ colMeans(rineq_reps)
 library(LorenzRegression)
 temp = sim(CI = -0.9, beta1 = -10, return_data = TRUE)$data
 Lorenz.curve(y = temp$ACCESS, ## farthest --> nearest proximity 
-             x = temp$INCOME, ## worse --> better income
+             x = temp$INCOME) ## worse --> better income
              graph = TRUE)
 
 ## Try different alpha1, beta1 
