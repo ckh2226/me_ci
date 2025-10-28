@@ -1,3 +1,4 @@
+set.seed(1)
 n = 10000
 
 # 1) Rural/not rural indicator
@@ -71,15 +72,29 @@ contour_plot +
   annotate(geom = "text",
            label = "Cov(R,W)=0",
            color = "azure",
-           x = 0.026,
-           y = 0.005) +
+           x = 0.01,
+           y = 0.001, 
+           hjust = 0, 
+           vjust = 0) +
   geom_abline(slope = -1,
               intercept = 0,
               linetype = "dashed",
               color = "azure") +
   annotate(geom = "text",
-           label = "-Cov(R,W) <= Var(W)",
+           label = "-Cov(R,W) = Var(W)",
            color = "azure",
-           x = 0.026,
-           y = 0.005,
-           angle = -40)
+           x = 0.01,
+           y = -0.008,
+           angle = -29, 
+           hjust = 0, 
+           vjust = 0)
+ggsave(filename = "~/Documents/me_ci/lambda_contour_plot.png",
+       device = "png",
+       width = 7,
+       height = 5,
+       units = "in")
+ggsave(filename = "~/Documents/me_ci/lambda_contour_plot.svg",
+       device = "svg",
+       width = 7,
+       height = 5,
+       units = "in")
