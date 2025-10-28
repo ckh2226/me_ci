@@ -651,3 +651,109 @@ df_betas |>
   facet_wrap(~factor(exp_ci_mu), 
              scales = "free")
 ```
+
+## Moment-Based Corrections for Partially Validated Data 
+
+```{r}
+# Simulation to calculate the beta1/beta1* coefficients 
+simulate_moment_correct = function(sigmaU, n, alpha1, beta1, v = 0.25) {
+  data = sim_ef_data(sigmaU = sigmaU, 
+                      n = n, 
+                      alpha1 = alpha1, 
+                      beta1 = beta1)
+  data$W = data$Rstar - data$R
+  mu_hat = data$Y_bar[1]
+  var_r = var(data$R)
+  var_w = var(data$W)
+  cov_rw = cov(data$R, data$W)
+  fit1 = lm(Y ~ R, data = data)
+  fit2 = lm(Y ~ Rstar, data = data)
+  alpha1_hat = fit1$coefficients[1] 
+  beta1_hat = fit1$coefficients[2] 
+  alpha1star_hat = fit2$coefficients[1] 
+  beta1star_hat = fit2$coefficients[2] 
+  
+  est_ci_mu = 2 * var_r / mu_hat * beta1_hat ## theoretically corrected
+  est_ci_mu_star = 2 * var_r / mu_hat * beta1star_hat ## naive 
+  
+  ## Mimic two-phase design we
+  nv = n * v 
+  data$V = as.numeric(1:n %in% sample(1:n, nv, replace = FALSE)) ### SRS 
+  var_r = var(data$R[data$V == 1]) ## variance of the error-prone ranks 
+  varW = mean(data$W[data$V == 1]) ## (mean) variance of the errors in ranks
+  covRW = cov(data$Rstar[data$V == 1], data$Rstar[data$V == 1]) ## (mean) covariance between true ranks and errors
+  exp_lambda2 = (varR + covRW) / (varR + varW + 2 * covRW)
+  exp_lambda2
+  
+  return(data.frame(alpha1_hat, 
+                    beta1_hat,
+                    alpha1star_hat,
+                    beta1star_hat, 
+                    mu_bar = mu_hat, 
+                    var_r = round(var_r, 8), 
+                    var_w, 
+                    cov_rw))
+}
+```
+
+```{r, cache = TRUE, echo = FALSE}
+df_low_betas = do.call(what = rbind, 
+                       args = replicate(n = 10000, 
+                                        expr = simulate_betas(sigmaU = 0.5, 
+                                                              n = 1000, 
+                                                              alpha1 = 2.5, 
+                                                              beta1 = -3), 
+                                        simplify = FALSE)) 
+df_zero_betas = do.call(what = rbind, 
+                        args = replicate(n = 10000, 
+                                         expr = simulate_betas(sigmaU = 0.5, 
+                                                               n = 1000, 
+                                                               alpha1 = 3, 
+                                                               beta1 = 0), 
+                                         simplify = FALSE)) 
+df_high_betas = do.call(what = rbind, 
+                        args = replicate(n = 10000, 
+                                         expr = simulate_betas(sigmaU = 0.5, 
+                                                               n = 1000, 
+                                                               alpha1 = -0.5, 
+                                                               beta1 = 3), 
+                                         simplify = FALSE)) 
+
+df_betas = df_low_betas |> 
+  mutate(est_ci_mu = 2 * var_r / mu_bar * beta1_hat, 
+         est_ci_alpha_beta = 2 * var_r / (alpha1_hat + (beta1_hat / 2)) * beta1_hat, 
+         est_ci_mu_star = 2 * var_r / mu_bar * beta1star_hat, 
+         est_ci_alpha_beta_star = 2 * var_r / (alpha1star_hat + (beta1star_hat / 2)) * beta1star_hat, 
+         approx_ci = -0.5, 
+         alpha1 = 2.5, 
+         beta1 = -3, 
+         exp_mu = alpha1 + beta1 * 0.5, 
+         exp_ci_mu = 2 * var_r / exp_mu * beta1, 
+         exp_ci_alpha_beta = 2 * var_r / (alpha1 + (beta1 / 2)) * beta1) |> 
+  bind_rows(
+    df_zero_betas |> 
+      mutate(est_ci_mu = 2 * var_r / mu_bar * beta1_hat, 
+             est_ci_alpha_beta = 2 * var_r / (alpha1_hat + (beta1_hat / 2)) * beta1_hat, 
+             est_ci_mu_star = 2 * var_r / mu_bar * beta1star_hat, 
+             est_ci_alpha_beta_star = 2 * var_r / (alpha1star_hat + (beta1star_hat / 2)) * beta1star_hat, 
+             approx_ci = 0.0, 
+             alpha1 = 3, 
+             beta1 = 0, 
+             exp_mu = alpha1 + beta1 * 0.5, 
+             exp_ci_mu = 2 * var_r / exp_mu * beta1, 
+             exp_ci_alpha_beta = 2 * var_r / (alpha1 + (beta1 / 2)) * beta1) 
+  ) |> 
+  bind_rows(
+    df_high_betas |> 
+      mutate(est_ci_mu = 2 * var_r / mu_bar * beta1_hat, 
+             est_ci_alpha_beta = 2 * var_r / (alpha1_hat + (beta1_hat / 2)) * beta1_hat, 
+             est_ci_mu_star = 2 * var_r / mu_bar * beta1star_hat, 
+             est_ci_alpha_beta_star = 2 * var_r / (alpha1star_hat + (beta1star_hat / 2)) * beta1star_hat, 
+             approx_ci = 0.5, 
+             alpha1 = -0.5, 
+             beta1 = 3, 
+             exp_mu = alpha1 + beta1 * 0.5, 
+             exp_ci_mu = 2 * var_r / exp_mu * beta1, 
+             exp_ci_alpha_beta = 2 * var_r / (alpha1 + (beta1 / 2)) * beta1) 
+  )
+```
