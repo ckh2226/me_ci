@@ -52,7 +52,14 @@ contour_plot = try_vals |>
                              bold = TRUE)) +
   theme(axis.title = element_text(face = "bold"),
         panel.background = element_rect(fill = "azure"),
-        panel.grid = element_blank())
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("#39558CFF", "#32648EFF", "#2D718EFF", "#287D8EFF", # "#238A8DFF"
+                               "#440154FF", "#481568FF", "#482677FF", "#453781FF", #"#3F4788FF",
+                               "#AB337CFF", "#C03A76FF", "#D6456CFF", "#E85362FF" #"#F4685CFF" # "#FA815FFF",
+                               #"#1F968BFF", "#20A386FF", "#29AF7FFF", "#3CBC75FF"# "#56C667FF"
+  ))
+# scale_fill_viridis(option = "magma",
+#                    discrete = TRUE)
 contour_plot
 ggsave(filename = "~/Documents/me_ci/lambda_contour_plot_plain.png",
        device = "png",
@@ -73,8 +80,8 @@ contour_plot +
            label = "Cov(R,W)=0",
            color = "azure",
            x = 0.01,
-           y = 0.001, 
-           hjust = 0, 
+           y = 0.001,
+           hjust = 0,
            vjust = 0) +
   geom_abline(slope = -1,
               intercept = 0,
@@ -85,8 +92,8 @@ contour_plot +
            color = "azure",
            x = 0.01,
            y = -0.008,
-           angle = -29, 
-           hjust = 0, 
+           angle = -29,
+           hjust = 0,
            vjust = 0)
 ggsave(filename = "~/Documents/me_ci/lambda_contour_plot.png",
        device = "png",
