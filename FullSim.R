@@ -35,28 +35,28 @@ sim_ef_data = function(sigmaU, n, alpha1, beta1) {
   
   # Calculate error-prone rank
   Rstar <- (rank(Xstar) - 1)/n + 1/(2 * n)
-  w <- Rstar - R
+  W <- Rstar - R
   
   # 4) Return 
-  data.frame(Y, X, R, Z, U, Xstar, Rstar, w, Y_bar = mean(Y))
+  data.frame(Y, X, R, Z, U, Xstar, Rstar, W, Y_bar = mean(Y))
 }
 
-data <- sim_ef_data(0.5, 10000, -0.5, 3)
-mu_hat <- data$Y_bar[1]
-var_r <- var(data$R)
-fit1 <- lm(Y ~ R, data = data)
-fit2 <- lm(Y ~ Rstar, data = data)
-beta1_hat <- fit1$coefficients[2] 
-
-our_ci <- 2 * var_r/mu_hat * beta1_hat # Try computing CI this way instead of using rineq
-
-their_ci <- ci(data$X,
-           data$Y,
-           type = "CI",
-           method = "linreg_delta", # Check method
-           df_correction = TRUE)
-
-data$Y_bar
+# data <- sim_ef_data(0.5, 10000, -0.5, 3)
+# mu_hat <- data$Y_bar[1]
+# var_r <- var(data$R)
+# fit1 <- lm(Y ~ R, data = data)
+# fit2 <- lm(Y ~ Rstar, data = data)
+# beta1_hat <- fit1$coefficients[2] 
+# 
+# our_ci <- 2 * var_r/mu_hat * beta1_hat # Try computing CI this way instead of using rineq
+# 
+# their_ci <- ci(data$X,
+#            data$Y,
+#            type = "CI",
+#            method = "linreg_delta"
+#            df_correction = TRUE)
+# 
+# data$Y_bar
 
 
 
@@ -66,59 +66,71 @@ simulate_rep = function(sigmaU, n, alpha1, beta1) {
   temp <- sim_ef_data(sigmaU, n, alpha1, beta1) # First step of replication
   
   mu_hat <- temp$Y_bar[1]
-  var_r <- var(temp$R)
+  var_R <- var(temp$R)
+  var_W <- var(temp$W)
+  cov_RW <- cov(temp$R, temp$W)
   fit1 <- lm(Y ~ R, data = temp)
   fit2 <- lm(Y ~ Rstar, data = temp)
   beta1_hat <- fit1$coefficients[2] 
   beta1star_hat <- fit2$coefficients[2] 
+  lambda <- (var_R + cov_RW)/(var_R + var_W + 2 * cov_RW)
   
-  ci_x <- 2 * var_r/mu_hat * beta1_hat
-  ci_xstar <- 2 * var_r/mu_hat * beta1star_hat
-  
-  # Calculating CIs steps 2a and 2b
-  # ci_xstar <- ci(temp$Xstar,
-  #                temp$Y,
-  #                type = "CI",
-  #                method = "cov_convenience", # Check method
-  #                df_correction = TRUE
-  # )
-  # 
-  # ci_x <- ci(temp$X,
-  #            temp$Y,
-  #            type = "CI",
-  #            method = "cov_convenience", # Check method
-  #            df_correction = TRUE
-  # )
-  
-  var_w <- var(temp$w)
-  var_R <- var(temp$R)
-  lambda <- var_R/(var_R + var_w)
+  ci_x <- 2 * var_R/mu_hat * beta1_hat # Error-free CI
+  ci_xstar <- 2 * var_R/mu_hat * beta1star_hat # Error-prone CI
   
   # data.frame(ci_xstar = ci_xstar$concentration_index, ci_x = ci_x$concentration_index, sigmaU, var_w, var_R, lambda, n)
-  data.frame(ci_xstar = ci_xstar, ci_x, sigmaU, var_w, var_R, lambda, n)
+  data.frame(ci_xstar = ci_xstar, ci_x, sigmaU, var_W, var_R, cov_RW, lambda, n)
 
 }
 
 # Run multiple simulations at different levels of alpha1 and beta1
-df_low_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 2.5, -3), simplify = FALSE)) 
-df_zero_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 3, 0), simplify = FALSE)) 
-df_high_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, -0.5, 3), simplify = FALSE)) 
+df_low_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 2.5, -3), simplify = FALSE)) |>
+  mutate(approx_ci = -0.5) # CI ~ -0.5
+df_zero_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 3, 0), simplify = FALSE)) |>
+  mutate(approx_ci = 0.0) # CI ~ 0.0
+df_high_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, -0.5, 3), simplify = FALSE)) |>
+  mutate(approx_ci = 0.5) #CI ~ 0.5
 
-df_low_small_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 2.5, -3), simplify = FALSE)) 
-df_low_mid_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, 2.5, -3), simplify = FALSE)) 
-df_low_large_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 10000, 2.5, -3), simplify = FALSE)) 
+# Combine dataframes 
+df_full <- rbind(df_low_ci, df_zero_ci, df_high_ci)
 
-df_low_small_var <- do.call(rbind, replicate(10000, simulate_rep(0.1, 5000, 2.5, -3), simplify = FALSE)) 
-df_low_mid_var <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, 2.5, -3), simplify = FALSE)) 
-df_low_large_var <- do.call(rbind, replicate(10000, simulate_rep(1, 5000, 2.5, -3), simplify = FALSE)) 
+# Define colors 
+cols = c("#9abc59", "#ebb940", "#386092", "#8c8c8c", "#ff884d")
 
-ggplot(data = df_high_ci, aes(x = ci_xstar/ci_x, y = lambda)) + geom_point() + geom_abline(intercept = 0, slope = 1) +
-  geom_smooth()
+# Plot to show difference in ci_x and ci_xstar without bias factor
+g1 <- ggplot(data = df_full, aes(x = ci_x, y = ci_xstar, color = factor(approx_ci))) +
+  geom_point() +
+  geom_abline(intercept = 0, 
+              slope = 1, 
+              linetype = "dashed", 
+              color = cols[4]) +
+  theme_minimal() + scale_color_manual(values = cols, guide = "none") +
+  labs(title = "Error-Prone Concentration Index vs. Error-Free CI", 
+       x = "Estimated Error-Free Concentration Index", 
+       y = "Estimated Error-Prone Concentration Index")
+
+# Plot to show correction to ci_xstar using bias factor
+g2 <- ggplot(data = df_full, aes(x = ci_x, y = 1/lambda * ci_xstar, color = factor(approx_ci))) +
+  geom_point() +
+  geom_abline(intercept = 0, 
+              slope = 1, 
+              linetype = "dashed", 
+              color = cols[4]) +
+  theme_minimal() + scale_color_manual(values = cols, guide = "none") +
+  labs(title = "Error-Prone CI/Bias Factor vs. Error-Free CI", 
+       x = "Estimated Error-Free Concentration Index", 
+       y = "Estimated Error-Prone CI/Bias Factor")
+
+gridExtra::grid.arrange(g1, g2, ncol = 1)
 
 
-df_low_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, 2.5, -3), simplify = FALSE)) 
-df_zero_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, 3, 0), simplify = FALSE)) 
-df_high_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, -0.5, 3), simplify = FALSE)) 
+# df_low_small_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 2.5, -3), simplify = FALSE)) 
+# df_low_mid_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, 2.5, -3), simplify = FALSE)) 
+# df_low_large_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 10000, 2.5, -3), simplify = FALSE)) 
+# 
+# df_low_small_var <- do.call(rbind, replicate(10000, simulate_rep(0.1, 5000, 2.5, -3), simplify = FALSE)) 
+# df_low_mid_var <- do.call(rbind, replicate(10000, simulate_rep(0.5, 5000, 2.5, -3), simplify = FALSE)) 
+# df_low_large_var <- do.call(rbind, replicate(10000, simulate_rep(1, 5000, 2.5, -3), simplify = FALSE)) 
                                                                             
 
 
