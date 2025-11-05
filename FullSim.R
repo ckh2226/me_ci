@@ -91,7 +91,7 @@ df_zero_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 3, 0), sim
 df_high_ci <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, -0.5, 3), simplify = FALSE)) |>
   mutate(approx_ci = 0.5) #CI ~ 0.5
 
-# Combine dataframes 
+# Combine data frames 
 df_full <- rbind(df_low_ci, df_zero_ci, df_high_ci)
 
 # Define colors 
@@ -121,7 +121,49 @@ g2 <- ggplot(data = df_full, aes(x = ci_x, y = 1/lambda * ci_xstar, color = fact
        x = "Estimated Error-Free Concentration Index", 
        y = "Estimated Error-Prone CI/Bias Factor")
 
-gridExtra::grid.arrange(g1, g2, ncol = 1)
+gridExtra::grid.arrange(g1, g2, ncol = 2)
+
+############# Test different values of sigmaU #############
+try_sigmas <- seq(from = 0, to = 5, by = 0.5)
+n <- length(try_sigmas)
+results <- rep(NA, 0)
+
+for(i in 1:n) {
+  sim <- do.call(rbind, replicate(1000, simulate_rep(try_sigmas[i], 1000, 2.5, -3), simplify = FALSE))
+  results <- rbind(sim, results)
+}
+
+ggplot(data = results, aes(x = sigmaU, y = ci_xstar, group = sigmaU)) + 
+  geom_boxplot(fill = "#386092") +
+  theme_minimal() +
+  labs(title = "Boxplots of Concentration Indices at Various Error Levels",
+       x = "Severity of Errors in X",
+       y = "Error-Prone Concentration Index") +
+  geom_hline(yintercept = -0.5, linetype = "dashed") +
+  geom_text(aes(5.3, -0.5, label = "Truth", vjust = -0.5))
+
+##########################
+
+
+
+
+
+
+# Create a data frame to store simulation results (average concentration indices and variance used)
+low_ci_df <- data.frame(sigmaU = try_sigmas, avg_ci_x = rep(NA, n), avg_ci_xstar = rep(NA, n))
+
+for(i in 1:n) {
+  sim <- do.call(rbind, replicate(1000, simulate_rep(try_sigmas[i], 1000, 2.5, -3), simplify = FALSE))
+  low_ci_df[i, 'avg_ci_x'] <- mean(sim$ci_x)
+  low_ci_df[i, 'avg_ci_xstar'] <- mean(sim$ci_xstar)
+}
+
+low_ci_df_long <- low_ci_df |>
+  pivot_longer(cols = c('avg_ci_x', 'avg_ci_xstar'), names_to = 'variable', values_to = 'ci')
+
+ggplot(low_ci_df_long, aes(x = sigmaU, y = ci, color = variable)) + geom_point() +
+  labs(title = "Simulated Concentration Indices", x = "Variance of Error Term", y = "Concentration Index") +
+  theme_bw() 
 
 
 # df_low_small_n <- do.call(rbind, replicate(10000, simulate_rep(0.5, 1000, 2.5, -3), simplify = FALSE)) 
