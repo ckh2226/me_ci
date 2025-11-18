@@ -19,5 +19,5 @@ sim_data = function(sigmaU, n, beta0, beta1) {
   w = Rstar - R
 
   # Return complete dataset, including mean of Y
-  data.frame(Y, X, R, Z, U, Xstar, Rstar, w, Y_bar = mean(Y))
+  data.frame(Y, X, R, U, Xstar, Rstar, w, Y_bar = mean(Y))
 }
