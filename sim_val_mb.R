@@ -37,40 +37,47 @@ sim_val_mb = function(sigmaU, n, alpha1, beta1, pv = 0.1) {
   # Now, we can try to fit the concentration index 
   ## Full-sample methods (oracle and naive)
   mu_hat <- mean(dat$Y)
-  var_R <- var(dat$R) ## = var(R*) -- Nice! 
+  varR <- var(dat$R) ## = var(R*) -- Nice! 
   fit_ci_naive <- lm(Y ~ Rstar, data = dat)
   fit_ci_oracle <- lm(Y ~ R, data = dat)
   beta1star_hat <- fit_ci_naive$coefficients[2] 
   beta1_hat <- fit_ci_oracle$coefficients[2] 
-  ci_premult = 2 * var_R / mu_hat 
+  ci_premult = 2 * varR / mu_hat 
   ci_xstar <- ci_premult * beta1star_hat # Error-prone CI
   ci_x <- ci_premult * beta1_hat # Error-free CI
   
   ## Partially validated methods 
   ### Using Var(R) from validation subsample
-  ci_xmb_varRval <- lambdahat_varRval * ci_xstar # Moment-corrected CI using subsample Var(R)
-  varRstar <- var(dat$Rstar) 
+  ci_xmb_varRval <-  ci_xstar / lambdahat_varRval # Moment-corrected CI using subsample Var(R)
+  varRstar <- var(dat$Rstar) ## Var(R*)
   ### Using Var(R*) from the the sample
   lambdahat_varRstar = (varRstar + covRWval) / 
     (varRstar + varWval + 2 * covRWval) ## Estimated bias factor
-  ci_xmb_varRstar <- lambdahat_varRstar * ci_xstar # Moment-corrected CI using subsample Var(R)
+  ci_xmb_varRstar <- ci_xstar / lambdahat_varRstar # Moment-corrected CI using subsample Var(R)
+  
+  ## Add oracle for reference 
+  covRW = cov(dat$R, dat$w)
+  varW = var(dat$w)
+  lambdahat = (varR + covRW) / 
+    (varR + varW + 2 * covRW) ## Estimated bias factor
   
   return(c(ci_x = as.numeric(ci_x), 
            ci_xmb_varRval = as.numeric(ci_xmb_varRval), 
            ci_xmb_varRstar = as.numeric(ci_xmb_varRstar), 
            ci_xstar = as.numeric(ci_xstar), 
+           lambdahat, lambdahat_varRval, lambdahat_varRstar, 
            varRval = varRval, varWval = varWval, covRWval = covRWval,
-           varR = var_R, varW = var(dat$w), covRW = cov(dat$R, dat$w)))
+           varR = varR, varW = varW, covRW = covRW))
 }
 
 # Run multiple simulations at different levels of alpha1 and beta1
-df_low_ci <- do.call(rbind, replicate(1000, sim_val_mb(0.5, 1000, 2.5, -3), simplify = FALSE)) |>
+df_low_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, 2.5, -3), simplify = FALSE)) |>
   data.frame() |> 
   mutate(approx_ci = -0.5) # CI ~ -0.5
-df_zero_ci <- do.call(rbind, replicate(1000, sim_val_mb(0.5, 1000, 3, 0), simplify = FALSE)) |>
+df_zero_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, 3, 0), simplify = FALSE)) |>
   data.frame() |> 
   mutate(approx_ci = 0.0) # CI ~ 0.0
-df_high_ci <- do.call(rbind, replicate(1000, sim_val_mb(0.5, 1000, -0.5, 3), simplify = FALSE)) |>
+df_high_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, -0.5, 3), simplify = FALSE)) |>
   data.frame() |> 
   mutate(approx_ci = 0.5) #CI ~ 0.5
 
