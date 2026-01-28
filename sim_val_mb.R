@@ -4,28 +4,14 @@ source("~/Documents/me_ci/sim_data.R")
 set.seed(120)
 
 # Load packages
-library(ggplot2)
-library(dplyr)
+library(ggplot2) ## for pretty plots
+library(dplyr) ## for data manipulation
+library(tidyr) ## for data transformation
 
 # Write function to partially validate and try regression calibration
-sim_val_mb = function(sigmaU, n, alpha1, beta1, pv = 0.1) {
+sim_val_mb = function(sigmaU, n, approx_ci, pv = 0.1) {
   # Simulate data 
-  dat = sim_data(sigmaU, n, alpha1, beta1)
-  
-  # Partially validate 
-  dat$V = sample(x = c(FALSE, TRUE), 
-                 size = 1000, 
-                 replace = TRUE, 
-                 prob = c(1 - pv, pv))
-  dat$Xval = dat$X ## initialize Xval = X 
-  dat$Xval[!dat$V] = NA ## but then redact Xval if V = FALSE (unvalidated)
-  dat$Wval = dat$w ## initialize Wval = w 
-  dat$Wval[!dat$V] = NA ## but then redact Xval if V = FALSE (unvalidated)
-  
-  # Calculate ranks based on X in the validation subsample
-  nv = sum(dat$V) ## sample size validated
-  dat$Rval = NA ## initialize as NA
-  dat$Rval[dat$V] = (rank(dat$Xval[dat$V]) - 1) / nv + 1 / (2 * nv)
+  dat = sim_data(sigmaU, n, approx_ci, pv)
   
   # Use validation subset to estimate quantities in the bias factor
   varRval = var(dat$Rval, na.rm = TRUE) ## Var(R)
@@ -56,8 +42,8 @@ sim_val_mb = function(sigmaU, n, alpha1, beta1, pv = 0.1) {
   ci_xmb_varRstar <- ci_xstar / lambdahat_varRstar # Moment-corrected CI using subsample Var(R)
   
   ## Add oracle for reference 
-  covRW = cov(dat$R, dat$w)
-  varW = var(dat$w)
+  covRW = cov(dat$R, dat$W)
+  varW = var(dat$W)
   lambdahat = (varR + covRW) / 
     (varR + varW + 2 * covRW) ## Estimated bias factor
   
@@ -71,39 +57,37 @@ sim_val_mb = function(sigmaU, n, alpha1, beta1, pv = 0.1) {
 }
 
 # Run multiple simulations at different levels of alpha1 and beta1
-df_low_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, 2.5, -3), simplify = FALSE)) |>
+df_low_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = -0.5), simplify = FALSE)) |>
   data.frame() |> 
   mutate(approx_ci = -0.5) # CI ~ -0.5
-df_zero_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, 3, 0), simplify = FALSE)) |>
+df_zero_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = 0), simplify = FALSE)) |>
   data.frame() |> 
   mutate(approx_ci = 0.0) # CI ~ 0.0
-df_high_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, -0.5, 3), simplify = FALSE)) |>
+df_high_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = 0.5), simplify = FALSE)) |>
   data.frame() |> 
   mutate(approx_ci = 0.5) #CI ~ 0.5
 
-library(ggplot2)
+# Combine simulations from all three settings 
 all_df = df_low_ci |> 
   bind_rows(df_zero_ci) |> 
   bind_rows(df_high_ci) 
+
+# Make a boxplot of CI estimates by method x setting
 all_df |> 
-  dplyr::select(dplyr::starts_with("ci_"), approx_ci) |>
-  tidyr::gather(key = "Method", value = "Estimate", -5) |> 
+  select(starts_with("ci_"), approx_ci) |> ## only pull Ci vals and settings
+  gather(key = "Method", value = "Estimate", -5) |> ## pivot from wide --> long 
   ggplot(aes(x = Method, y = Estimate, fill = Method)) + 
   geom_boxplot() + 
   geom_hline(aes(yintercept = approx_ci), 
              linetype = "dashed") + 
   facet_wrap(~approx_ci, scales = "free")
 
+# Make a boxplot of var/covar estimates by method (ignored setting because they shouldn't vary)
 all_df |> 
-  dplyr::select(dplyr::starts_with(c("var", "cov"))) |>
-  tidyr::gather(key = "Method", value = "Estimate") |> 
-  dplyr::mutate(validated = grepl(pattern = "val", x = Method), 
+  select(starts_with(c("var", "cov"))) |> ## only pull Var(R), Var(W), Cov(R,w) and settings
+  gather(key = "Method", value = "Estimate") |> ## pivot from wide --> long 
+  mutate(validated = grepl(pattern = "val", x = Method), 
                 Method = sub(pattern = "val", replacement = "", x = Method)) |> 
   ggplot(aes(x = validated, y = Estimate, fill = validated)) + 
   geom_boxplot() + 
   facet_wrap(~Method, scales = "free")
-
-# dat |> 
-#   ggplot() + 
-#   geom_point(aes(x = Xstar, y = Xval), color = "cornflowerblue", alpha = 0.5) + 
-#   geom_point(aes(x = Xstar, y = Xcal), color = "magenta", alpha = 0.5)
