@@ -28,7 +28,7 @@ sim_data = function(sigmaU, n, approx_ci, pv = 0.1) {
 
   # Error-prone fractional rank
   Rstar = (rank(Xstar) - 1) / n + 1 / (2 * n)
-  WRstar - R
+  W = Rstar - R
 
   # Partially validate 
   V = sample(x = c(FALSE, TRUE), 
@@ -37,7 +37,7 @@ sim_data = function(sigmaU, n, approx_ci, pv = 0.1) {
              prob = c(1 - pv, pv))
   Xval = dat$X ## initialize Xval = X 
   Xval[!V] = NA ## but then redact Xval if V = FALSE (unvalidated)
-  Wval = dat$w ## initialize Wval = w 
+  Wval = dat$W ## initialize Wval = w 
   Wval[!V] = NA ## but then redact Xval if V = FALSE (unvalidated)
   
   # Calculate ranks based on X in the validation subsample
