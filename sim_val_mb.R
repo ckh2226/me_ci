@@ -1,4 +1,4 @@
-source("~/Documents/me_ci/sim_data.R")
+source("~/Documents/GitHub/me_ci/sim_data.R")
 
 # Be reproducible queens. 
 set.seed(120)
@@ -11,7 +11,7 @@ library(tidyr) ## for data transformation
 # Write function to partially validate and try regression calibration
 sim_val_mb = function(sigmaU, n, approx_ci, pv = 0.1) {
   # Simulate data 
-  dat = sim_data(sigmaU, n, approx_ci, pv)
+  dat <- sim_data(sigmaU, n, approx_ci, pv)
   
   # Use validation subset to estimate quantities in the bias factor
   varRval = var(dat$Rval, na.rm = TRUE) ## Var(R)
@@ -91,3 +91,30 @@ all_df |>
   ggplot(aes(x = validated, y = Estimate, fill = validated)) + 
   geom_boxplot() + 
   facet_wrap(~Method, scales = "free")
+
+# Try different error levels
+all_df <- data.frame()
+try_sigmaU <- seq(from = 0, to = 5, by = 0.5)
+for(i in 1:length(try_sigmaU)) {
+  df_low_ci <- do.call(rbind, replicate(10000, sim_val_mb(try_sigmaU[i], 1000, approx_ci = -0.5), simplify = FALSE)) |>
+    data.frame() |> 
+    mutate(approx_ci = -0.5, sigmaU = try_sigmaU[i]) # CI ~ -0.5
+  df_zero_ci <- do.call(rbind, replicate(10000, sim_val_mb(try_sigmaU[i], 1000, approx_ci = 0), simplify = FALSE)) |>
+    data.frame() |> 
+    mutate(approx_ci = 0.0, sigmaU = try_sigmaU[i]) # CI ~ 0.0
+  df_high_ci <- do.call(rbind, replicate(10000, sim_val_mb(try_sigmaU[i], 1000, approx_ci = 0.5), simplify = FALSE)) |>
+    data.frame() |> 
+    mutate(approx_ci = 0.5, sigmaU = try_sigmaU[i]) #CI ~ 0.5
+  
+  # Combine simulations from all three settings 
+  all_df = all_df |> bind_rows(df_low_ci) |> 
+    bind_rows(df_zero_ci) |> 
+    bind_rows(df_high_ci) 
+}
+
+write.csv(all_df, file = "~/Documents/GitHub/me_ci/all_df.csv", row.names = FALSE) # Save data
+
+# Visualize concentration index by changing error level, for different approximate CI
+
+
+

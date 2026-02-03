@@ -30,6 +30,8 @@ sim_data = function(sigmaU, n, approx_ci, pv = 0.1) {
   Rstar = (rank(Xstar) - 1) / n + 1 / (2 * n)
   W = Rstar - R
 
+  dat <- data.frame(Y, X, R, U, Xstar, Rstar, W)
+  
   # Partially validate 
   V = sample(x = c(FALSE, TRUE), 
              size = 1000, 
@@ -46,5 +48,5 @@ sim_data = function(sigmaU, n, approx_ci, pv = 0.1) {
   Rval[V] = (rank(Xval[V]) - 1) / nv + 1 / (2 * nv)
   
   # Return complete dataset, including mean of Y
-  data.frame(Y, X, R, U, Xstar, Rstar, W, Xval, Wval, Rval)
+  return(data.frame(Y, X, R, U, Xstar, Rstar, W, Xval, Wval, Rval))
 }
