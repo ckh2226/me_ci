@@ -73,8 +73,7 @@ ggplot(data = results_new, aes(x = "", y = value, fill = Estimate)) +
   annotate("text", x = 0.5, y = -0.495, label = "True CI = -0.5", size = 3)
   # scale_fill_manual(values = c("#82A641", "#9ABC59", "#A8CC64", "#B4D17D", 
                                # "#F2D68F", "#FFD061", "#EBB940", "#C49525", 
-                               # "#386092", "#3D6CA6", "#5981B5", "#6892C4")
-  )
+                               # "#386092", "#3D6CA6", "#5981B5", "#6892C4"))
 
 
 
