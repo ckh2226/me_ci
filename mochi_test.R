@@ -60,17 +60,19 @@ for(i in 1:length(low_ci_samples)) {
 # Pivot for plotting
 results_new <- results |>
   pivot_longer(cols = c(ci_oracle, ci_naive, ci_mb),
-               names_to = "Estimate")
+               names_to = "Estimator")
 
-ggplot(data = results_new, aes(x = "", y = value, fill = Estimate)) +
+ggplot(data = results_new, aes(x = "", y = value, fill = Estimator)) +
   geom_boxplot() +
   theme_bw() + 
   geom_hline(yintercept = -0.5, linetype = "dashed", color = "darkgrey") +
   labs(title = "Distribution of Simulated Concentration Indices",
        x = "n = 1000",
-       y = "Concentration Index") +
-  scale_fill_manual(values = c("#82A641", "#EBB940", "#5981B5")) +
-  annotate("text", x = 0.5, y = -0.495, label = "True CI = -0.5", size = 3)
+       y = "Concentration Index",
+       fill = "CI Estimator") +
+  scale_fill_manual(values = c("#82A641", "#EBB940", "#5981B5"), 
+                    labels = c("Oracle", "Naive", "Moment-Based")) +
+  annotate("text", x = 0.515, y = -0.495, label = "True CI = -0.5", size = 3) 
   # scale_fill_manual(values = c("#82A641", "#9ABC59", "#A8CC64", "#B4D17D", 
                                # "#F2D68F", "#FFD061", "#EBB940", "#C49525", 
                                # "#386092", "#3D6CA6", "#5981B5", "#6892C4"))
