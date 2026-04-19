@@ -57,30 +57,30 @@ sim_val_mb = function(sigmaU, n, approx_ci, pv = 0.1, design = "SRS") {
 }
 
 # Run multiple simulations at different levels of alpha1 and beta1
-# df_low_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = -0.5), simplify = FALSE)) |>
-#   data.frame() |>
-#   mutate(approx_ci = -0.5) # CI ~ -0.5
-# df_zero_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = 0), simplify = FALSE)) |>
-#   data.frame() |>
-#   mutate(approx_ci = 0.0) # CI ~ 0.0
-# df_high_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = 0.5), simplify = FALSE)) |>
-#   data.frame() |>
-#   mutate(approx_ci = 0.5) #CI ~ 0.5
-# 
-# # Combine simulations from all three settings
-# all_df = df_low_ci |>
-#   bind_rows(df_zero_ci) |>
-#   bind_rows(df_high_ci)
-# 
-# # Make a boxplot of CI estimates by method x setting
-# all_df |>
-#   select(starts_with("ci_"), approx_ci) |> ## only pull Ci vals and settings
-#   gather(key = "Method", value = "Estimate", -5) |> ## pivot from wide --> long
-#   ggplot(aes(x = Method, y = Estimate, fill = Method)) +
-#   geom_boxplot() +
-#   geom_hline(aes(yintercept = approx_ci),
-#              linetype = "dashed") +
-#   facet_wrap(~approx_ci, scales = "free")
+df_low_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = -0.5), simplify = FALSE)) |>
+  data.frame() |>
+  mutate(approx_ci = -0.5) # CI ~ -0.5
+df_zero_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = 0), simplify = FALSE)) |>
+  data.frame() |>
+  mutate(approx_ci = 0.0) # CI ~ 0.0
+df_high_ci <- do.call(rbind, replicate(10000, sim_val_mb(0.5, 1000, approx_ci = 0.5), simplify = FALSE)) |>
+  data.frame() |>
+  mutate(approx_ci = 0.5) #CI ~ 0.5
+
+# Combine simulations from all three settings
+all_df = df_low_ci |>
+  bind_rows(df_zero_ci) |>
+  bind_rows(df_high_ci)
+
+# Make a boxplot of CI estimates by method x setting
+all_df |>
+  select(starts_with("ci_"), approx_ci) |> ## only pull Ci vals and settings
+  gather(key = "Method", value = "Estimate", -5) |> ## pivot from wide --> long
+  ggplot(aes(x = Method, y = Estimate, fill = Method)) +
+  geom_boxplot() +
+  geom_hline(aes(yintercept = approx_ci),
+             linetype = "dashed") +
+  facet_wrap(~approx_ci, scales = "free")
 # 
 # # Make a boxplot of var/covar estimates by method (ignored setting because they shouldn't vary)
 # all_df |>

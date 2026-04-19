@@ -134,13 +134,13 @@ for(i in 1:n) {
 }
 
 ggplot(data = results, aes(x = sigmaU, y = ci_xstar, group = sigmaU)) + 
-  geom_boxplot(fill = "#386092") +
+  geom_boxplot(fill = "#dd227d") +
   theme_minimal() +
-  labs(title = "Boxplots of Concentration Indices at Various Error Levels",
+  labs(title = "Concentration Indices at Various Error Levels",
        x = "Severity of Errors in X",
        y = "Error-Prone Concentration Index") +
   geom_hline(yintercept = -0.5, linetype = "dashed") +
-  geom_text(aes(5.3, -0.5, label = "Truth", vjust = -0.5))
+  annotate("text", 4.5, -0.48, label = "True Concentration Index")
 
 ##########################
 
