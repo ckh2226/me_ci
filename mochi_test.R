@@ -1,4 +1,5 @@
 source("~/Documents/GitHub/me_ci/sim_data.R")
+source("~/Documents/GitHub/mochi/mochi_estimate.R")
 
 set.seed(24)
 
