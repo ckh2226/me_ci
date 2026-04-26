@@ -127,7 +127,7 @@ sum_tab |>
     bias_naive = md("**Bias (Naive)**"),
     bias_perc_naive = md("**Bias (Naive) %**"),
     bias_mb = md("**Bias (MB)**"),
-    bias_perc_mb = md("**Bias (%)**"),
+    bias_perc_mb = md("**Bias (MB) (%)**"),
     ese = md("**ESE (MB)**"),
     ase = md("**ASE (MB)**"),
     truth = md("**True CI**")) |>
