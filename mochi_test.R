@@ -102,35 +102,35 @@ for(l in 1:3) {
 # results <- read.csv("~/Desktop/Thesis/sim_results.csv")
 
 # Build table for bias, ESE, and ASE
-sum_tab <- data.frame(bias_naive = rep(NA, 3),
+sum_tab <- data.frame(truth = rep(NA, 3), 
+                      bias_naive = rep(NA, 3),
                       bias_perc_naive = rep(NA, 3),
                       bias_mb = rep(NA, 3),
                       bias_perc_mb = rep(NA, 3),
                       ese = rep(NA, 3),
-                      ase = rep(NA, 3),
-                      truth = rep(NA, 3))
+                      ase = rep(NA, 3))
 
 for(l in 1:3) {
+  sum_tab[l, "truth"] <- unique(all_results[[l]]$approx_ci)
   sum_tab[l,"bias_naive"] <- mean(all_results[[l]]$ci_naive - all_results[[l]]$ci_oracle)
   sum_tab[l, "bias_perc_naive"] <- mean((all_results[[l]]$ci_naive - all_results[[l]]$ci_oracle)/all_results[[l]]$ci_oracle) 
   sum_tab[l,"bias_mb"] <- mean(all_results[[l]]$ci_mb - all_results[[l]]$ci_oracle)
   sum_tab[l, "bias_perc_mb"] <- mean((all_results[[l]]$ci_mb - all_results[[l]]$ci_oracle)/all_results[[l]]$ci_oracle)
   sum_tab[l, "ese"] <- sd(all_results[[l]]$ci_mb)
   sum_tab[l, "ase"] <- mean(all_results[[l]]$ci_mb_se)
-  sum_tab[l, "truth"] <- unique(all_results[[l]]$approx_ci)
 }
 
 library(gt)
 sum_tab |>
   gt() |>
   cols_label(
+    truth = md("**True CI**"),
     bias_naive = md("**Bias (Naive)**"),
     bias_perc_naive = md("**Bias (Naive) %**"),
     bias_mb = md("**Bias (MB)**"),
     bias_perc_mb = md("**Bias (MB) (%)**"),
     ese = md("**ESE (MB)**"),
-    ase = md("**ASE (MB)**"),
-    truth = md("**True CI**")) |>
+    ase = md("**ASE (MB)**")) |>
   fmt_number(
     columns = c(bias_naive, bias_mb, ese, ase),
     decimals = 4
